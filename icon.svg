@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#080e04"/>
+  <rect x="16" y="16" width="480" height="480" fill="none" stroke="#d4a017" stroke-width="6" rx="20"/>
+  <circle cx="58" cy="74" r="9" fill="#4a8040"/>
+  <text x="78" y="86" font-family="'Courier New',monospace" font-size="26" fill="#4a6030" letter-spacing="5">3TIUM</text>
+  <text x="256" y="380" font-family="'Courier New',monospace" font-size="300" font-weight="bold"
+        fill="#d4a017" text-anchor="middle">A</text>
+  <rect x="40" y="420" width="432" height="5" fill="#d4a017"/>
+  <text x="256" y="462" font-family="'Courier New',monospace" font-size="22"
+        fill="#3a5020" text-anchor="middle" letter-spacing="6">ADJUTANT</text>
+</svg>

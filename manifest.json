@@ -1,0 +1,15 @@
+{
+  "name": "ADJUTANT · 3tium GmbH",
+  "short_name": "ADJUTANT",
+  "description": "Digitaler Stabsassistent · Major d.R. C. Behrendt · 3tium GmbH",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#d4a017",
+  "background_color": "#080e04",
+  "lang": "de",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

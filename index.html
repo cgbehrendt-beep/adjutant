@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="de"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ADJUTANT v4.0 · 3tium GmbH</title>
+
+<!-- PWA installierbar machen -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#d4a017">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ADJUTANT">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg0:#080e04;--bg1:#0b1407;--bg2:#111a08;--bg3:#172010;--bg4:#1e2a12;
+  --bdr:#233218;--bdr2:#192410;--bdr3:#0e1709;
+  --gold:#d4a017;--gold2:#b8880d;--gold3:#f0b820;
+  --grn:#4a8040;--grn2:#6b8c42;--grn3:#3a5020;--grn4:#263616;
+  --txt:#c8d4b8;--txt2:#8aaa70;--txt3:#506838;--txt4:#364e24;
+  --red:#ef4444;--ora:#f97316;
+  --fn:'Courier New',Courier,monospace;
+  --r:4px;--tap:52px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px);
+  --safe-r:env(safe-area-inset-right,0px);
+}
+html,body{height:100%;background:var(--bg0);color:var(--txt);font-family:var(--fn);overflow-x:hidden;font-size:14px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:900;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(212,160,23,.005) 3px,rgba(212,160,23,.005) 4px)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg0)}
+::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
+
+/* ══ SHELL ═══════════════════════════════════════════════════════════════════ */
+.shell{display:flex;flex-direction:column;min-height:100vh}
+@media(min-width:680px){.shell{flex-direction:row}}
+
+/* ══ SIDEBAR ════════════════════════════════════════════════════════════════ */
+.sidebar{display:none}
+@media(min-width:680px){
+  .sidebar{display:flex;flex-direction:column;width:230px;min-width:230px;
+    background:linear-gradient(180deg,#0f1a08 0%,#0b1407 100%);
+    border-right:1px solid var(--bdr2);position:sticky;top:0;height:100vh;
+    overflow-y:auto;z-index:20;padding-left:var(--safe-l)}
+  .sidebar::after{content:'';position:absolute;right:-1px;top:10%;height:80%;
+    width:1px;background:linear-gradient(to bottom,transparent,rgba(212,160,23,.12),transparent);pointer-events:none}
+}
+.sb-hdr{padding:16px 14px 12px;border-bottom:1px solid var(--bdr2)}
+.sb-sys{font-size:7px;letter-spacing:3px;color:var(--txt4);margin-bottom:3px}
+.sb-title{font-size:17px;font-weight:bold;color:var(--gold);letter-spacing:3px;display:flex;align-items:center;gap:6px}
+.sb-sub{font-size:6.5px;letter-spacing:1.5px;color:var(--grn3);margin-top:2px}
+.sb-clock-wrap{padding:14px;border-bottom:1px solid var(--bdr3)}
+.sb-clock{font-size:28px;color:var(--gold);letter-spacing:2px;font-variant-numeric:tabular-nums;line-height:1}
+.sb-date{font-size:8px;color:var(--txt3);letter-spacing:1px;margin-top:4px}
+.sb-urgent{font-size:8px;color:var(--red);margin-top:3px;display:none}
+.sb-nav{padding:10px 8px;flex:1}
+.sb-nav-lbl{font-size:7px;letter-spacing:3px;color:var(--txt4);padding:0 6px;margin-bottom:6px}
+.sb-btn{display:flex;align-items:center;gap:10px;width:100%;background:transparent;
+  border:none;border-radius:var(--r);border-left:2px solid transparent;
+  color:var(--txt3);padding:12px 10px;cursor:pointer;font-family:var(--fn);
+  font-size:10px;letter-spacing:2px;transition:all .15s;text-align:left;min-height:var(--tap)}
+.sb-btn:hover{background:var(--bg3);color:var(--txt2)}
+.sb-btn.active{background:var(--bg3);border-left-color:var(--gold);color:var(--gold)}
+.sb-icon{font-size:16px;flex-shrink:0}
+.sb-lbl{flex:1}
+.sb-badge{background:var(--red);color:#fff;font-size:8px;padding:1px 5px;border-radius:8px;flex-shrink:0}
+.sb-stats{padding:10px;border-top:1px solid var(--bdr3)}
+.sb-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.sb-stat{background:var(--bg1);border:1px solid var(--bdr);border-radius:var(--r);padding:8px;text-align:center}
+.sb-stat-n{font-size:18px;font-weight:bold}
+.sb-stat-l{font-size:6.5px;letter-spacing:1.5px;color:var(--txt4);margin-top:1px}
+.sb-footer{padding:8px 14px;border-top:1px solid var(--bdr3)}
+.sb-ver{font-size:6.5px;letter-spacing:2px;color:var(--txt4)}
+
+/* ══ MAIN AREA ═══════════════════════════════════════════════════════════════ */
+.main-area{flex:1;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;padding-right:var(--safe-r)}
+
+/* ══ TOP HEADER (mobile only) ════════════════════════════════════════════════ */
+.top-hdr{background:linear-gradient(180deg,#182010 0%,#0f1a08 100%);border-bottom:2px solid var(--gold);
+  padding:10px 14px;display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;z-index:30}
+@media(min-width:680px){.top-hdr{display:none}}
+.th-sys{font-size:7px;letter-spacing:3px;color:var(--txt4)}
+.th-title{font-size:16px;font-weight:bold;color:var(--gold);letter-spacing:3px;display:flex;align-items:center;gap:5px}
+.th-sub{font-size:6.5px;letter-spacing:1.5px;color:var(--grn3);margin-top:2px}
+.th-clock{font-size:18px;color:var(--gold);letter-spacing:2px;font-variant-numeric:tabular-nums}
+.th-date{font-size:7px;color:var(--txt3);letter-spacing:1px}
+.th-urgent{font-size:7.5px;color:var(--red);display:none;margin-top:2px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--grn);box-shadow:0 0 5px var(--grn);display:inline-block}
+.swipe-hint{text-align:center;font-size:7.5px;color:var(--txt4);letter-spacing:2px;padding:5px;display:none}
+@media(max-width:679px){.swipe-hint{display:block}}
+
+/* ══ CONTENT ════════════════════════════════════════════════════════════════ */
+.content{padding:12px 12px calc(var(--tap) + 20px + var(--safe-b)) 12px}
+@media(min-width:680px){.content{padding:16px 18px 24px;max-width:680px}}
+.tab{display:none}.tab.active{display:block}
+
+/* ══ BOTTOM NAV ════════════════════════════════════════════════════════════ */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:linear-gradient(0deg,#0d1609 80%,rgba(13,22,9,.95));
+  border-top:1px solid var(--bdr);display:flex;padding-bottom:var(--safe-b)}
+@media(min-width:680px){.bottom-nav{display:none}}
+.bn-btn{flex:1;background:transparent;border:none;border-top:2px solid transparent;
+  color:var(--txt4);padding:10px 4px 6px;cursor:pointer;font-family:var(--fn);
+  font-size:7.5px;letter-spacing:1.5px;display:flex;flex-direction:column;
+  align-items:center;gap:3px;transition:all .15s;min-height:var(--tap)}
+.bn-btn.active{border-top-color:var(--gold);color:var(--gold);background:rgba(212,160,23,.05)}
+.bn-icon{font-size:18px}
+.bn-badge{background:var(--red);color:#fff;font-size:7px;padding:1px 4px;border-radius:8px;margin-top:-2px}
+
+/* ══ CARD ═══════════════════════════════════════════════════════════════════ */
+.card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.card.gl{border-left:3px solid var(--gold)}
+.card.rl{border-left:3px solid var(--red);background:#110808;border-color:#3a1414}
+.sh{font-size:8px;letter-spacing:3px;color:var(--grn2);margin-bottom:10px;padding-bottom:7px;
+  border-bottom:1px solid var(--bdr2);text-transform:uppercase}
+
+/* ══ LAGE BUTTONS ════════════════════════════════════════════════════════════ */
+.lage-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+@media(min-width:500px){.lage-grid{display:grid;grid-template-columns:1fr 1fr 1fr}}
+.lage-btn{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);
+  color:var(--txt);padding:14px 12px;cursor:pointer;text-align:left;font-family:var(--fn);
+  transition:all .2s;display:flex;align-items:center;gap:12px;min-height:var(--tap)}
+@media(min-width:500px){.lage-btn{display:block}}
+.lage-btn:active{transform:scale(.98);background:var(--bg3)}
+.lage-btn:hover:not(:disabled){border-color:var(--gold);background:var(--bg3)}
+.lage-btn:disabled{opacity:.5;cursor:not-allowed}
+.lage-btn.running{border-color:var(--gold)!important;background:var(--bg3)!important}
+.lb-icon{font-size:22px;flex-shrink:0}
+@media(min-width:500px){.lb-icon{margin-bottom:3px}}
+.lb-info{flex:1}
+@media(min-width:500px){.lb-info{display:contents}}
+.lb-lbl{font-size:11px;letter-spacing:2px;color:var(--gold);font-weight:bold}
+.lb-time{font-size:13px;color:var(--grn3)}
+@media(min-width:500px){.lb-time{margin-top:1px}}
+.lb-desc{font-size:8px;color:var(--txt4);line-height:1.5}
+@media(min-width:500px){.lb-desc{margin-top:3px}}
+.lb-last{font-size:7px;color:var(--grn4);margin-top:4px}
+
+/* ══ PHASE BAR ════════════════════════════════════════════════════════════════ */
+.phase-bar{background:var(--bg1);border:1px solid var(--bdr2);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;display:none}
+.phase-bar.visible{display:block}
+.phase-bar-lbl{font-size:7.5px;letter-spacing:3px;color:var(--txt4);margin-bottom:8px}
+.phases{display:flex;overflow-x:auto;padding-bottom:2px}
+.ph-item{flex:1;min-width:65px;text-align:center;padding:6px 4px;border-radius:3px;transition:all .3s;position:relative;flex-shrink:0}
+.ph-item::after{content:'';position:absolute;right:0;top:50%;transform:translateY(-50%);width:1px;height:55%;background:var(--bdr3)}
+.ph-item:last-child::after{display:none}
+.ph-icon{font-size:12px;margin-bottom:2px}
+.ph-name{font-size:6.5px;letter-spacing:1.5px;color:var(--txt4)}
+.ph-stat{font-size:8px;color:var(--txt4);margin-top:1px}
+.ph-item.pending{opacity:.3}
+.ph-item.active{background:var(--bg3);border:1px solid var(--bdr)}
+.ph-item.active .ph-name{color:var(--gold)}
+.ph-item.active .ph-stat{color:var(--grn2)}
+.ph-item.done .ph-name{color:var(--grn2)}
+.ph-item.done .ph-stat{color:var(--grn)}
+
+/* ══ STEPS ════════════════════════════════════════════════════════════════════ */
+.steps-panel{background:var(--bg1);border:1px solid var(--bdr2);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;display:none}
+.steps-panel.visible{display:block}
+.step-item{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:10px;border-bottom:1px solid var(--bdr3);color:var(--txt4)}
+.step-item:last-child{border-bottom:none}
+.step-item.active{color:var(--gold)}
+.step-item.done{color:var(--txt2)}
+.step-item.error{color:var(--red)}
+.si{width:14px;text-align:center;flex-shrink:0}
+.sn{flex:1;letter-spacing:1px}
+.st{font-size:7px;color:var(--txt4);flex-shrink:0}
+
+/* ══ INTERIM ════════════════════════════════════════════════════════════════ */
+.phase-interim{background:var(--bg1);border:1px solid var(--bdr2);border-left:3px solid var(--grn3);
+  border-radius:var(--r);padding:10px 12px;margin-bottom:8px;display:none}
+.phase-interim.visible{display:block}
+.pi-lbl{font-size:7px;letter-spacing:2px;color:var(--txt4);margin-bottom:5px}
+.pi-txt{font-size:9.5px;line-height:1.7;color:var(--grn3);white-space:pre-wrap;font-family:var(--fn);max-height:100px;overflow:hidden}
+
+/* ══ LOADING ════════════════════════════════════════════════════════════════ */
+@keyframes scan{0%{transform:translateX(-200%)}100%{transform:translateX(350%)}}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.loading-wrap{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:20px;text-align:center;margin-bottom:10px;display:none}
+.loading-wrap.visible{display:block}
+.ll-lbl{color:var(--gold);letter-spacing:3px;font-size:10px;animation:pulse 1.5s infinite}
+.ll-sub{color:var(--txt3);font-size:7.5px;margin-top:3px;letter-spacing:1.5px}
+.ll-bar{margin-top:12px;height:2px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.ll-fill{height:100%;width:35%;background:var(--gold);animation:scan 1.4s ease-in-out infinite}
+
+/* ══ STREAMING PRE (shown during stream, hidden after render) ════════════════ */
+.b-stream-wrap{background:var(--bg1);border:1px solid var(--bdr2);border-left:4px solid var(--gold);
+  border-radius:var(--r);padding:16px 14px;display:none}
+.b-classif{font-size:7px;letter-spacing:2.5px;color:var(--txt4);margin-bottom:10px;
+  padding-bottom:8px;border-bottom:1px solid var(--bdr2)}
+.b-stream-text{white-space:pre-wrap;word-break:break-word;font-size:11.5px;line-height:1.9;
+  color:var(--txt);font-family:var(--fn);margin:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.stream-cursor{display:inline-block;width:7px;height:13px;background:var(--gold);
+  vertical-align:middle;animation:blink .7s infinite;margin-left:2px}
+
+/* ══ RENDERED BRIEFING ═══════════════════════════════════════════════════════ */
+.briefing-rendered{display:none}
+.br-header{background:var(--bg1);border:1px solid var(--bdr2);border-left:4px solid var(--gold);
+  border-radius:var(--r);padding:14px 16px;margin-bottom:10px}
+.br-classif{font-size:7px;letter-spacing:2.5px;color:var(--txt4);margin-bottom:8px}
+.br-title-line{font-size:14px;color:var(--gold);letter-spacing:3px;font-weight:bold;line-height:1.4}
+.br-subtitle{font-size:9px;color:var(--grn3);letter-spacing:2px;margin-top:4px}
+
+/* toolbar: expand all / collapse all / raw toggle */
+.br-toolbar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.br-tool-btn{background:transparent;border:1px solid var(--bdr);border-radius:3px;
+  color:var(--txt3);padding:6px 10px;font-size:8px;letter-spacing:1.5px;cursor:pointer;
+  font-family:var(--fn);transition:all .15s;min-height:36px}
+.br-tool-btn:active{background:var(--bg3);color:var(--gold);border-color:var(--gold)}
+.br-tool-btn.active{background:var(--bg3);color:var(--gold);border-color:var(--gold)}
+
+/* section card */
+.br-section{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);
+  margin-bottom:8px;overflow:hidden;animation:fadeIn .3s ease}
+.br-sec-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;
+  min-height:var(--tap);user-select:none;transition:background .15s;-webkit-user-select:none}
+.br-sec-header:active{background:var(--bg3)}
+.br-sec-icon{font-size:18px;flex-shrink:0}
+.br-sec-title{flex:1;font-size:10px;letter-spacing:2px;color:var(--gold);font-weight:bold}
+.br-sec-count{font-size:9px;color:var(--txt4);flex-shrink:0;margin-right:4px}
+.br-sec-chevron{font-size:12px;color:var(--txt4);flex-shrink:0;transition:transform .2s}
+.br-sec-chevron.open{transform:rotate(180deg)}
+.br-sec-body{border-top:1px solid var(--bdr2);padding:12px 14px;display:none}
+.br-sec-body.open{display:block}
+
+/* item types inside sections */
+.br-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr3);align-items:flex-start}
+.br-item:last-child{border-bottom:none;padding-bottom:0}
+.br-item-bullet{color:var(--gold);flex-shrink:0;font-size:12px;margin-top:1px}
+.br-item-text{flex:1;font-size:12px;line-height:1.6;color:var(--txt)}
+.br-item-sub{font-size:10px;color:var(--txt3);margin-top:2px}
+
+/* appointment card */
+.br-appt{background:var(--bg1);border:1px solid var(--bdr2);border-left:3px solid var(--gold);
+  border-radius:3px;padding:10px 12px;margin-bottom:6px}
+.br-appt:last-child{margin-bottom:0}
+.br-appt-time{font-size:11px;color:var(--gold);font-weight:bold;letter-spacing:1px}
+.br-appt-title{font-size:13px;color:var(--txt);margin-top:2px;line-height:1.4}
+.br-appt-meta{font-size:9.5px;color:var(--txt3);margin-top:3px}
+.br-appt.personal{border-left-color:var(--grn2)}
+.br-appt.defence{border-left-color:var(--red)}
+.br-appt.verein{border-left-color:var(--ora)}
+.br-appt.birthday{border-left-color:#c084fc}
+
+/* email card */
+.br-email{background:var(--bg1);border:1px solid var(--bdr2);border-radius:3px;
+  padding:10px 12px;margin-bottom:6px;display:flex;gap:10px;align-items:flex-start}
+.br-email:last-child{margin-bottom:0}
+.br-email-pri{flex-shrink:0;font-size:7.5px;letter-spacing:1px;padding:2px 5px;
+  border-radius:2px;margin-top:2px;white-space:nowrap}
+.br-email-body{flex:1}
+.br-email-from{font-size:10px;color:var(--txt3);margin-bottom:2px}
+.br-email-subj{font-size:12px;color:var(--txt);line-height:1.4}
+.br-email-summary{font-size:10px;color:var(--txt3);margin-top:3px;line-height:1.5}
+
+/* news item */
+.br-news{background:var(--bg1);border:1px solid var(--bdr2);border-left:3px solid var(--grn3);
+  border-radius:3px;padding:10px 12px;margin-bottom:6px}
+.br-news:last-child{margin-bottom:0}
+.br-news-src{font-size:8px;letter-spacing:2px;color:var(--grn2);margin-bottom:3px}
+.br-news-text{font-size:12px;color:var(--txt);line-height:1.5}
+
+/* status badge (LIVE / MANUELL) */
+.br-status-live{color:var(--grn);font-size:9px;letter-spacing:1px}
+.br-status-manual{color:var(--ora);font-size:9px;letter-spacing:1px}
+
+/* task item */
+.br-task{display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--bdr3)}
+.br-task:last-child{border-bottom:none;padding-bottom:0}
+.br-task-pri{font-size:7.5px;padding:2px 4px;border-radius:2px;flex-shrink:0}
+.br-task-txt{flex:1;font-size:12px;color:var(--txt)}
+
+/* generic text paragraph */
+.br-para{font-size:12px;line-height:1.7;color:var(--txt2);margin-bottom:6px}
+.br-para:last-child{margin-bottom:0}
+
+/* frist / critical alert */
+.br-alert{background:#1a0a04;border:1px solid #7a2a10;border-left:3px solid var(--red);
+  border-radius:3px;padding:10px 12px;margin-bottom:6px}
+.br-alert-label{font-size:8px;letter-spacing:2px;color:var(--red);margin-bottom:3px}
+.br-alert-text{font-size:12px;color:#f87171;line-height:1.5}
+
+/* raw fallback */
+.br-raw{white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.8;
+  color:var(--txt2);font-family:var(--fn)}
+
+/* ══ RESUME BANNER ═══════════════════════════════════════════════════════════ */
+.resume-banner{background:#0d1a09;border:1px solid var(--gold);border-left:4px solid var(--gold);
+  border-radius:var(--r);padding:12px 14px;margin-bottom:12px;
+  display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;animation:fadeIn .4s ease}
+.rb-icon{font-size:22px;flex-shrink:0;margin-top:2px}
+.rb-body{flex:1;min-width:160px}
+.rb-label{font-size:8px;letter-spacing:3px;color:var(--gold);margin-bottom:3px}
+.rb-info{font-size:10.5px;color:var(--txt2);line-height:1.5}
+.rb-phase-dots{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;align-items:center}
+.rb-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.rb-dot.done{background:var(--grn)}
+.rb-dot.pending{background:var(--bdr);border:1px solid var(--bdr2)}
+.rb-dot-lbl{font-size:7.5px;color:var(--txt4);margin-left:2px}
+.rb-actions{display:flex;gap:7px;flex-shrink:0;margin-top:2px;flex-wrap:wrap;align-self:center}
+.rb-btn{background:transparent;border:1px solid var(--bdr);border-radius:3px;
+  color:var(--txt3);padding:8px 12px;font-size:9px;letter-spacing:2px;cursor:pointer;
+  font-family:var(--fn);min-height:42px;transition:all .15s;white-space:nowrap}
+.rb-btn:active{transform:scale(.97)}
+.rb-resume{background:var(--gold);border-color:var(--gold);color:var(--bg0);font-weight:bold}
+.rb-resume:active{background:var(--gold2)}
+.rb-discard{border-color:var(--bdr2);color:var(--txt4)}
+.rb-discard:active{border-color:var(--red);color:var(--red)}
+@keyframes retryPulse{0%,100%{opacity:1}50%{opacity:.4}}
+.retry-active .ll-lbl{animation:retryPulse .6s infinite;color:var(--ora)!important}
+.retry-active .ll-fill{background:var(--ora)!important}
+
+/* ══ KALENDER-ERINNERUNGEN ════════════════════════════════════════════════════ */
+.reminder-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.reminder-slot{background:var(--bg1);border:1px solid var(--bdr);border-radius:3px;
+  padding:12px 8px;text-align:center}
+.reminder-slot-icon{font-size:18px;margin-bottom:3px}
+.reminder-slot-time{font-size:14px;color:var(--gold);font-weight:bold;letter-spacing:1px}
+.reminder-slot-label{font-size:7.5px;letter-spacing:1.5px;color:var(--txt4);margin-top:3px}
+.reminder-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.reminder-step{display:flex;gap:10px;align-items:flex-start;font-size:11px;
+  color:var(--txt2);line-height:1.6;padding:8px 0;border-bottom:1px solid var(--bdr2)}
+.reminder-step:last-child{border-bottom:none}
+.reminder-step-num{color:var(--gold);font-weight:bold;flex-shrink:0;min-width:18px}
+.reminder-copy{background:var(--bg1);border:1px solid var(--bdr);border-radius:3px;
+  padding:8px 12px;font-size:10px;color:var(--gold);font-family:var(--fn);
+  margin:4px 0;cursor:pointer;width:100%;text-align:left;transition:all .15s}
+.reminder-copy:active{background:var(--bg3);border-color:var(--gold)}
+.reminder-copied{color:var(--grn);font-size:8px;letter-spacing:1px;margin-top:2px;
+  display:none;height:14px}
+
+/* ══ EMPTY ════════════════════════════════════════════════════════════════════ */
+.empty{background:var(--bg1);border:1px dashed var(--bdr2);border-radius:var(--r);padding:36px 20px;text-align:center}
+.empty-i{font-size:26px;opacity:.2;margin-bottom:8px}
+.empty-l{color:var(--txt4);letter-spacing:3px;font-size:9px}
+.empty-s{color:#1e2e10;font-size:8px;margin-top:4px}
+
+/* ══ TASKS ════════════════════════════════════════════════════════════════════ */
+.t-add-row{display:flex;flex-direction:column;gap:8px}
+@media(min-width:480px){.t-add-row{flex-direction:row;flex-wrap:wrap}}
+.t-input{flex:1;min-width:140px;background:var(--bg1);border:1px solid var(--bdr);border-radius:3px;
+  color:var(--txt);padding:0 10px;font-size:13px;font-family:var(--fn);outline:none;height:var(--tap)}
+.t-input:focus{border-color:var(--gold)}
+.t-sel{background:var(--bg1);border:1px solid var(--bdr);border-radius:3px;color:var(--txt);
+  padding:0 8px;font-size:11px;font-family:var(--fn);cursor:pointer;outline:none;height:var(--tap)}
+.btn-g{background:var(--gold);border:none;border-radius:3px;color:var(--bg0);
+  font-size:11px;font-weight:bold;letter-spacing:1px;cursor:pointer;font-family:var(--fn);
+  height:var(--tap);padding:0 18px;white-space:nowrap;flex-shrink:0}
+.btn-g:active{background:var(--gold2);transform:scale(.97)}
+.btn-g:disabled{background:var(--bg3);color:var(--txt3);cursor:not-allowed}
+.stats-g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.stat{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 6px;text-align:center}
+.stat-n{font-size:20px;font-weight:bold}
+.stat-l{font-size:7px;letter-spacing:1.5px;color:var(--txt3);margin-top:1px}
+.f-row{display:flex;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
+.f-btn{flex:1;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--txt3);
+  padding:0;font-size:9px;letter-spacing:1.5px;cursor:pointer;font-family:var(--fn);min-height:44px}
+.f-btn.active{background:var(--bg3);border-bottom-color:var(--gold);color:var(--gold)}
+.task-list{display:flex;flex-direction:column;gap:5px}
+.t-row{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);
+  padding:10px 12px;display:flex;align-items:center;gap:8px;min-height:var(--tap);transition:all .2s}
+.t-row.done-r{background:var(--bg1);border-color:var(--bdr2);opacity:.5}
+.t-chk{cursor:pointer;width:18px;height:18px;accent-color:var(--gold);flex-shrink:0}
+.t-txt{flex:1;font-size:12px;font-family:var(--fn)}
+.t-txt.done-t{text-decoration:line-through;color:var(--txt4)}
+.t-badge{font-size:7.5px;letter-spacing:1px;border-radius:2px;padding:2px 5px;flex-shrink:0}
+.t-del{background:transparent;border:none;color:var(--txt4);cursor:pointer;font-size:20px;
+  padding:0;line-height:1;flex-shrink:0;width:32px;text-align:center}
+.t-del:active{color:var(--red)}
+
+/* ══ SOURCES ════════════════════════════════════════════════════════════════ */
+.src-grid{display:flex;flex-direction:column;gap:10px}
+@media(min-width:680px){.src-grid{display:grid;grid-template-columns:1fr 1fr}}
+.src-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr2);min-height:44px}
+.src-row:last-child{border-bottom:none}
+.src-icon{font-size:16px;flex-shrink:0}
+.src-name{flex:1;font-size:10px;color:var(--txt2)}
+.src-sub{font-size:7.5px;color:var(--txt4);display:block;margin-top:1px}
+.src-badge{font-size:7px;letter-spacing:1px;padding:2px 5px;border-radius:2px;flex-shrink:0}
+.badge-live{color:var(--grn);border:1px solid var(--grn)}
+.badge-manual{color:var(--ora);border:1px solid var(--ora)}
+.badge-web{color:var(--gold);border:1px solid var(--gold)}
+.src-toggle{width:18px;height:18px;cursor:pointer;accent-color:var(--gold);flex-shrink:0}
+
+/* ══ PROJECTS ════════════════════════════════════════════════════════════════ */
+.proj-ta{width:100%;min-height:80px;background:var(--bg1);border:1px solid var(--bdr);border-radius:3px;
+  color:var(--txt);padding:10px 11px;font-size:13px;font-family:var(--fn);outline:none;resize:vertical}
+.proj-ta:focus{border-color:var(--gold)}
+.ex-btn{display:flex;align-items:center;width:100%;background:transparent;border:1px solid var(--bdr2);
+  border-radius:3px;color:var(--txt4);padding:0 10px;font-size:10px;text-align:left;cursor:pointer;
+  font-family:var(--fn);margin-bottom:5px;transition:all .15s;min-height:var(--tap)}
+.ex-btn:active{border-color:var(--bdr);color:var(--grn2);background:var(--bg3)}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════════════════════════ -->
+<div class="sidebar">
+  <div class="sb-hdr">
+    <div class="sb-sys">3TIUM GMBH · HANNOVER · ÜVK Ü2</div>
+    <div class="sb-title"><span class="dot"></span>ADJUTANT</div>
+    <div class="sb-sub">STABSASSISTENT v4.0 · FOLD 7</div>
+  </div>
+  <div class="sb-clock-wrap">
+    <div class="sb-clock" id="sbClock">--:--:--</div>
+    <div class="sb-date" id="sbDate">---</div>
+    <div class="sb-urgent" id="sbUrgent"></div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-nav-lbl">NAVIGATION</div>
+    <button class="sb-btn active" id="sbn-lage" onclick="switchTab('lage',this,'sbn-')">
+      <span class="sb-icon">📋</span><span class="sb-lbl">LAGEBERICHT</span>
+    </button>
+    <button class="sb-btn" id="sbn-tasks" onclick="switchTab('tasks',this,'sbn-')">
+      <span class="sb-icon">✅</span><span class="sb-lbl" id="sbTasksLbl">AUFGABEN</span>
+      <span class="sb-badge" id="sbTasksBadge" style="display:none">0</span>
+    </button>
+    <button class="sb-btn" id="sbn-quellen" onclick="switchTab('quellen',this,'sbn-')">
+      <span class="sb-icon">📡</span><span class="sb-lbl">QUELLEN</span>
+    </button>
+    <button class="sb-btn" id="sbn-projekte" onclick="switchTab('projekte',this,'sbn-')">
+      <span class="sb-icon">🎯</span><span class="sb-lbl">PROJEKTE</span>
+    </button>
+    <div style="padding:8px 0;border-top:1px solid var(--bdr3);margin-top:8px">
+      <button class="sb-btn" id="installBtn" onclick="installPWA()"
+        style="display:none;border-left-color:var(--grn);color:var(--grn)">
+        <span class="sb-icon">📲</span><span class="sb-lbl">APP INSTALLIEREN</span>
+      </button>
+    </div>
+  </div>
+  <div class="sb-stats">
+    <div class="sb-stat-row">
+      <div class="sb-stat"><div class="sb-stat-n" id="sbOff" style="color:var(--gold)">0</div><div class="sb-stat-l">OFFEN</div></div>
+      <div class="sb-stat"><div class="sb-stat-n" id="sbDri" style="color:var(--red)">0</div><div class="sb-stat-l">DRINGEND</div></div>
+    </div>
+  </div>
+  <div class="sb-footer"><div class="sb-ver">ADJUTANT v4.0 · MAJOR d.R. C. BEHRENDT</div></div>
+</div>
+
+<!-- ══ MAIN AREA ═════════════════════════════════════════════════════════════ -->
+<div class="main-area">
+  <div class="top-hdr">
+    <div>
+      <div class="th-sys">3TIUM GMBH · ÜVK Ü2</div>
+      <div class="th-title"><span class="dot"></span>ADJUTANT</div>
+      <div class="th-sub">STABSASSISTENT v4.0 · MAJOR d.R. C. BEHRENDT</div>
+    </div>
+    <div style="text-align:right">
+      <div class="th-clock" id="thClock">--:--:--</div>
+      <div class="th-date" id="thDate">---</div>
+      <div class="th-urgent" id="thUrgent"></div>
+    </div>
+  </div>
+  <div class="swipe-hint">← WISCHEN ZUM WECHSELN →</div>
+
+  <div class="content">
+
+    <!-- ── TAB: LAGEBERICHT ── -->
+    <div class="tab active" id="tab-lage">
+
+      <!-- RESUME BANNER — appears if interrupted loop detected -->
+      <div class="resume-banner" id="resumeBanner" style="display:none">
+        <div class="rb-icon">⟳</div>
+        <div class="rb-body">
+          <div class="rb-label">UNTERBROCHENER LOOP ERKANNT</div>
+          <div class="rb-info" id="rbInfo">---</div>
+          <div class="rb-phase-dots" id="rbDots"></div>
+        </div>
+        <div class="rb-actions">
+          <button class="rb-btn rb-resume" onclick="resumeLoop()">FORTSETZEN</button>
+          <button class="rb-btn rb-discard" onclick="discardLoop()">VERWERFEN</button>
+        </div>
+      </div>
+
+      <div class="lage-grid">
+        <button class="lage-btn" id="btn-morgen" onclick="startLoop('morgen')">
+          <div class="lb-icon">🌅</div>
+          <div class="lb-info">
+            <div class="lb-lbl">MORGENLAGE</div>
+            <div class="lb-time">07:00 · 4 Phasen</div>
+            <div class="lb-desc">Kalender · Gmail · Vereine · Defence</div>
+            <div class="lb-last" id="lg-morgen"></div>
+          </div>
+        </button>
+        <button class="lage-btn" id="btn-mittag" onclick="startLoop('mittag')">
+          <div class="lb-icon">☀️</div>
+          <div class="lb-info">
+            <div class="lb-lbl">MITTAGSLAGE</div>
+            <div class="lb-time">12:00 · 3 Phasen</div>
+            <div class="lb-desc">Tageshälfte · Neue Emails</div>
+            <div class="lb-last" id="lg-mittag"></div>
+          </div>
+        </button>
+        <button class="lage-btn" id="btn-abend" onclick="startLoop('abend')">
+          <div class="lb-icon">🌙</div>
+          <div class="lb-info">
+            <div class="lb-lbl">ABENDLAGE</div>
+            <div class="lb-time">22:00 · 3 Phasen</div>
+            <div class="lb-desc">Tagesbilanz · Vorschau morgen</div>
+            <div class="lb-last" id="lg-abend"></div>
+          </div>
+        </button>
+      </div>
+
+      <div class="phase-bar" id="phaseBar">
+        <div class="phase-bar-lbl">⟳ AGENT-LOOP FORTSCHRITT</div>
+        <div class="phases" id="phasesContainer"></div>
+      </div>
+      <div class="steps-panel" id="stepsPanel">
+        <div class="sh" style="margin-bottom:6px">TOOL-AUFRUFE</div>
+        <div id="stepsList"></div>
+      </div>
+      <div class="phase-interim" id="phaseInterim">
+        <div class="pi-lbl" id="piLbl">PHASE LÄUFT...</div>
+        <div class="pi-txt" id="piTxt"></div>
+      </div>
+      <div class="loading-wrap" id="loadingBar">
+        <div style="font-size:20px;margin-bottom:7px">⚙</div>
+        <div class="ll-lbl" id="loadingLabel">AGENT-LOOP</div>
+        <div class="ll-sub" id="loadingSub">INITIALISIERT...</div>
+        <div class="ll-bar"><div class="ll-fill"></div></div>
+      </div>
+      <div class="card rl" id="lageError" style="display:none">
+        <div style="color:var(--red);font-size:10px;letter-spacing:1px">⚠ FEHLER</div>
+        <div style="color:#f87171;font-size:11px;margin-top:4px" id="lageErrorMsg"></div>
+      </div>
+
+      <!-- Streaming view (shown during final phase) -->
+      <div class="b-stream-wrap" id="bStreamWrap">
+        <div class="b-classif" id="bClassif">KLASSIFIZIERUNG: INTERN // ADJUTANT v3.2</div>
+        <pre class="b-stream-text" id="bText"></pre>
+      </div>
+
+      <!-- Rendered view (shown after loop completes) -->
+      <div class="briefing-rendered" id="briefingRendered"></div>
+
+      <div class="empty" id="lageEmpty">
+        <div class="empty-i">📋</div>
+        <div class="empty-l">KEIN AKTIVER LAGEBERICHT</div>
+        <div class="empty-s">Lageart antippen — Agent-Loop startet</div>
+      </div>
+    </div>
+
+    <!-- ── TAB: AUFGABEN ── -->
+    <div class="tab" id="tab-tasks">
+      <div class="card" style="margin-bottom:10px">
+        <div class="sh">Neue Aufgabe</div>
+        <div class="t-add-row">
+          <input class="t-input" id="taskInput" placeholder="Aufgabenbeschreibung..." onkeydown="if(event.key==='Enter')addTask()">
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <select class="t-sel" id="taskPri" style="color:var(--gold);flex:1">
+              <option value="DRINGEND">⚡ DRINGEND</option>
+              <option value="HOCH">🔴 HOCH</option>
+              <option value="NORMAL" selected>🟡 NORMAL</option>
+              <option value="NIEDRIG">🟢 NIEDRIG</option>
+            </select>
+            <select class="t-sel" id="taskCat" style="flex:1">
+              <option value="TELEFON">📞 TELEFON</option>
+              <option value="SCHREIBEN">✍️ SCHREIBEN</option>
+              <option value="PRÄSENTATION">📊 PRÄSENTATION</option>
+              <option value="MEETING">🤝 MEETING</option>
+              <option value="ALLGEMEIN" selected>📋 ALLGEMEIN</option>
+            </select>
+            <button class="btn-g" onclick="addTask()">+ ERFASSEN</button>
+          </div>
+        </div>
+      </div>
+      <div class="stats-g">
+        <div class="stat"><div class="stat-n" id="sGes" style="color:var(--grn2)">0</div><div class="stat-l">GESAMT</div></div>
+        <div class="stat"><div class="stat-n" id="sOff" style="color:var(--gold)">0</div><div class="stat-l">OFFEN</div></div>
+        <div class="stat"><div class="stat-n" id="sErl" style="color:var(--grn)">0</div><div class="stat-l">ERLEDIGT</div></div>
+        <div class="stat"><div class="stat-n" id="sDri" style="color:var(--red)">0</div><div class="stat-l">DRINGEND</div></div>
+      </div>
+      <div class="f-row">
+        <button class="f-btn active" id="f-OFFEN" onclick="setFilter('OFFEN')">OFFEN</button>
+        <button class="f-btn" id="f-ERLEDIGT" onclick="setFilter('ERLEDIGT')">ERLEDIGT</button>
+        <button class="f-btn" id="f-ALLE" onclick="setFilter('ALLE')">ALLE</button>
+      </div>
+      <div class="task-list" id="taskList"></div>
+    </div>
+
+    <!-- ── TAB: QUELLEN ── -->
+    <div class="tab" id="tab-quellen">
+
+      <!-- KALENDER-ERINNERUNGEN -->
+      <div class="card gl" style="margin-bottom:10px">
+        <div class="sh">🔔 Tägliche Erinnerungen einrichten</div>
+
+        <div class="reminder-grid">
+          <div class="reminder-slot">
+            <div class="reminder-slot-icon">🌅</div>
+            <div class="reminder-slot-time">07:00</div>
+            <div class="reminder-slot-label">MORGENLAGE</div>
+          </div>
+          <div class="reminder-slot">
+            <div class="reminder-slot-icon">☀️</div>
+            <div class="reminder-slot-time">12:00</div>
+            <div class="reminder-slot-label">MITTAGSLAGE</div>
+          </div>
+          <div class="reminder-slot">
+            <div class="reminder-slot-icon">🌙</div>
+            <div class="reminder-slot-time">22:00</div>
+            <div class="reminder-slot-label">ABENDLAGE</div>
+          </div>
+        </div>
+
+        <div style="font-size:9px;color:var(--txt4);margin-bottom:12px;letter-spacing:1px">
+          Einmalig in Google Kalender einrichten — danach täglich automatisch
+        </div>
+
+        <div class="reminder-steps">
+          <div class="reminder-step">
+            <span class="reminder-step-num">1.</span>
+            <div>Google Kalender öffnen — <span style="color:var(--gold)">calendar.google.com</span> — und unten rechts auf das <span style="color:var(--gold)">+</span> tippen</div>
+          </div>
+          <div class="reminder-step">
+            <span class="reminder-step-num">2.</span>
+            <div>
+              Titel eingeben — antippen und kopieren:
+              <button class="reminder-copy" onclick="copyReminder(this,'🌅 ADJUTANT Morgenlage','c1')">🌅 ADJUTANT Morgenlage</button>
+              <div class="reminder-copied" id="c1">✓ Kopiert</div>
+              Zeit: <span style="color:var(--gold)">07:00 Uhr</span>
+            </div>
+          </div>
+          <div class="reminder-step">
+            <span class="reminder-step-num">3.</span>
+            <div>
+              <span style="color:var(--gold)">Täglich wiederholen</span> aktivieren → Speichern.<br>
+              Dann dasselbe nochmal für Mittagslage:
+              <button class="reminder-copy" onclick="copyReminder(this,'☀️ ADJUTANT Mittagslage','c2')">☀️ ADJUTANT Mittagslage</button>
+              <div class="reminder-copied" id="c2">✓ Kopiert</div>
+              Zeit: <span style="color:var(--gold)">12:00 Uhr</span>
+            </div>
+          </div>
+          <div class="reminder-step">
+            <span class="reminder-step-num">4.</span>
+            <div>
+              Und Abendlage:
+              <button class="reminder-copy" onclick="copyReminder(this,'🌙 ADJUTANT Abendlage','c3')">🌙 ADJUTANT Abendlage</button>
+              <div class="reminder-copied" id="c3">✓ Kopiert</div>
+              Zeit: <span style="color:var(--gold)">22:00 Uhr</span>
+            </div>
+          </div>
+          <div class="reminder-step">
+            <span class="reminder-step-num">5.</span>
+            <div>Wenn die Erinnerung erscheint — antippen → ADJUTANT öffnen → gewünschte Lage antippen → Loop startet automatisch</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="src-grid">
+        <div class="card"><div class="sh">📧 Email-Konten</div><div id="emailList"></div></div>
+        <div class="card"><div class="sh">🏛️ Vereins-Websites</div><div id="vereineList"></div></div>
+        <div class="card"><div class="sh">🛡️ Defence-Quellen</div><div id="defenceList"></div></div>
+        <div class="card">
+          <div class="sh">ℹ️ Status-Legende</div>
+          <div style="font-size:10.5px;color:var(--txt2);line-height:2.2">
+            <div><span style="color:var(--grn)">● LIVE</span> — MCP direkt verbunden</div>
+            <div><span style="color:var(--ora)">● MANUELL</span> — Login erforderlich</div>
+            <div><span style="color:var(--gold)">● WEB</span> — Automatische Suche</div>
+          </div>
+          <div style="font-size:9px;color:var(--txt4);margin-top:8px;line-height:1.6">Vereine können an-/abgewählt werden.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB: PROJEKTE ── -->
+    <div class="tab" id="tab-projekte">
+      <div class="card" style="margin-bottom:10px">
+        <div class="sh">Projekt- / Analyseauftrag</div>
+        <textarea class="proj-ta" id="projPrompt" placeholder="Projektbeschreibung oder Analyseauftrag..."></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:7px">
+          <span style="font-size:8px;color:var(--txt4);letter-spacing:1px">Aufgaben werden automatisch eingetragen</span>
+          <button class="btn-g" id="btnAnalyze" onclick="analyzeProject()">ANALYSE STARTEN</button>
+        </div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:8px;letter-spacing:2px;color:var(--txt4);margin-bottom:8px">BEISPIELAUFTRÄGE</div>
+        <button class="ex-btn" onclick="setEx(0)">› ADK Modulraum: Bundeswehr G-CAP Ausschreibungen</button>
+        <button class="ex-btn" onclick="setEx(1)">› Frankenburg Technologies: Vertriebsstrategie Deutschland</button>
+        <button class="ex-btn" onclick="setEx(2)">› KRITIS-Dachgesetz Compliance bis Juli 2026</button>
+        <button class="ex-btn" onclick="setEx(3)">› BAAINBw-Lieferantenqualifikation: Schritte und Zeitplan</button>
+      </div>
+      <div class="loading-wrap" id="projLoading">
+        <div style="font-size:20px;margin-bottom:6px">⚙</div>
+        <div class="ll-lbl">AGENT ANALYSIERT PROJEKT</div>
+        <div class="ll-sub">WEB-RECHERCHE · LAGEANALYSE · AUFGABEN</div>
+        <div class="ll-bar"><div class="ll-fill"></div></div>
+      </div>
+      <div class="card rl" id="projError" style="display:none">
+        <div style="color:var(--red);font-size:10px" id="projErrorMsg"></div>
+      </div>
+      <div id="projResult"></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main-area -->
+
+<div class="bottom-nav">
+  <button class="bn-btn active" id="bn-lage" onclick="switchTab('lage',this,'bn-')">
+    <span class="bn-icon">📋</span><span>LAGE</span>
+  </button>
+  <button class="bn-btn" id="bn-tasks" onclick="switchTab('tasks',this,'bn-')">
+    <span class="bn-icon">✅</span>
+    <span id="bnTasksLbl">AUFGABEN</span>
+    <span class="bn-badge" id="bnTasksBadge" style="display:none">0</span>
+  </button>
+  <button class="bn-btn" id="bn-quellen" onclick="switchTab('quellen',this,'bn-')">
+    <span class="bn-icon">📡</span><span>QUELLEN</span>
+  </button>
+  <button class="bn-btn" id="bn-projekte" onclick="switchTab('projekte',this,'bn-')">
+    <span class="bn-icon">🎯</span><span>PROJEKTE</span>
+  </button>
+  <button class="bn-btn" id="bnInstallBtn" onclick="installPWA()"
+    style="display:none;border-top-color:var(--grn);color:var(--grn)">
+    <span class="bn-icon">📲</span><span>INSTALL</span>
+  </button>
+</div>
+</div><!-- /shell -->
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// BRIEFING RENDERER
+// Parst den Plaintext-Lagebericht in strukturierte HTML-Karten
+// ══════════════════════════════════════════════════════════════════════════════
+
+const SEC_CONFIG = {
+  'PERSÖNLICHE TERMINE':    { icon:'👤', color:'var(--grn2)',  type:'appt',    apptClass:'personal' },
+  'GEBURTSTAGE':            { icon:'🎂', color:'#c084fc',      type:'appt',    apptClass:'birthday' },
+  'ALLGEMEINE TERMINE':     { icon:'🤝', color:'var(--gold)',  type:'appt',    apptClass:'' },
+  'DEFENCE-MESSEN':         { icon:'🛡️', color:'var(--red)',   type:'appt',    apptClass:'defence' },
+  'VEREINSTERMINE':         { icon:'🏛️', color:'var(--ora)',   type:'appt',    apptClass:'verein' },
+  'EMAIL-AUSWERTUNG':       { icon:'📧', color:'var(--gold)',  type:'email'    },
+  'VEREINS-NEUIGKEITEN':    { icon:'📰', color:'var(--grn2)',  type:'news'     },
+  'DEFENCE-NEWS':           { icon:'🌐', color:'var(--red)',   type:'news'     },
+  'AUFGABENLISTE':          { icon:'✅', color:'var(--gold)',  type:'tasks'    },
+  'KRITISCHE FRISTEN':      { icon:'⚠️', color:'var(--red)',   type:'alert'    },
+  'ERLEDIGTE TERMINE':      { icon:'✓',  color:'var(--grn2)',  type:'appt',    apptClass:'personal' },
+  'AUSSTEHENDE TERMINE':    { icon:'⏰', color:'var(--gold)',  type:'appt',    apptClass:'' },
+  'NEUE EMAILS':            { icon:'📧', color:'var(--gold)',  type:'email'    },
+  'AKTUELLE MELDUNGEN':     { icon:'📡', color:'var(--grn2)',  type:'news'     },
+  'PRIORITÄRE AUFGABEN':    { icon:'⚡', color:'var(--red)',   type:'tasks'    },
+  'TAGESAUSWERTUNG':        { icon:'📊', color:'var(--gold)',  type:'text'     },
+  'OFFENE PUNKTE':          { icon:'🔴', color:'var(--red)',   type:'tasks'    },
+  'VORSCHAU MORGEN':        { icon:'🌅', color:'var(--gold)',  type:'appt',    apptClass:'' },
+  'AUFGABEN MORGEN':        { icon:'📋', color:'var(--gold)',  type:'tasks'    },
+};
+
+function matchSection(title) {
+  const t = title.toUpperCase().trim();
+  for (const [key, cfg] of Object.entries(SEC_CONFIG)) {
+    if (t.includes(key)) return { ...cfg, key };
+  }
+  return { icon:'📋', color:'var(--txt2)', type:'text', key: t };
+}
+
+// Detect time patterns: 08:00, 08:00–09:00, 08.00 Uhr, Mo 08:00
+const TIME_RE = /\b\d{1,2}[:.]\d{2}(\s?[–\-]\s?\d{1,2}[:.]\d{2})?\b/;
+// Detect date patterns: 02.05., 02.05.2026, Montag, Mo., Di., etc.
+const DATE_WORDS = /\b(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|mo\.|di\.|mi\.|do\.|fr\.|sa\.|so\.|heute|morgen|\d{1,2}\.\d{1,2}\.)/i;
+// Email priority keywords
+const PRI_MAP = { DRINGEND:'#ef4444', HOCH:'#f97316', NORMAL:'#d4a017', NIEDRIG:'#4a8040' };
+
+function looksLikeAppointment(line) {
+  return TIME_RE.test(line) || DATE_WORDS.test(line);
+}
+
+function parseAppointment(line) {
+  const timeMatch = line.match(TIME_RE);
+  const time = timeMatch ? timeMatch[0] : '';
+  const title = line.replace(TIME_RE, '').replace(/^[\s\-–·•:,]+/, '').replace(/[\s\-–·•:,]+$/, '').trim();
+  return { time, title };
+}
+
+function detectEmailPriority(line) {
+  for (const [pri] of Object.entries(PRI_MAP)) {
+    if (line.toUpperCase().includes(pri)) return pri;
+  }
+  // Heuristic: lines with urgent keywords
+  if (/dringend|wichtig|urgent|asap|sofort/i.test(line)) return 'DRINGEND';
+  if (/hoch|high|priorität|priority/i.test(line)) return 'HOCH';
+  return 'NORMAL';
+}
+
+function isStatusLine(line) {
+  return /\[LIVE\]|\[MANUELL\]/.test(line);
+}
+
+function isSectionDivider(line) {
+  return /^━{5,}/.test(line.trim()) || /^={5,}/.test(line.trim()) || /^-{5,}/.test(line.trim());
+}
+
+function isSectionHeader(line) {
+  return /^\d{1,2}\.\s+[A-ZÜÄÖ]/.test(line.trim());
+}
+
+function extractSectionNumber(line) {
+  const m = line.trim().match(/^(\d{1,2})\.\s+(.+)/);
+  return m ? { num: m[1], title: m[2].trim() } : null;
+}
+
+// Strip leading bullets / dashes from item lines
+function cleanItemLine(line) {
+  return line.replace(/^[\s\-–·•▪▸›»]+/, '').trim();
+}
+
+function isEmptyLine(line) { return line.trim() === ''; }
+
+// ── MAIN RENDER FUNCTION ──────────────────────────────────────────────────────
+function renderBriefing(rawText, classif) {
+  const lines = rawText.split('\n');
+  const sections = [];
+  let headerLines = [];
+  let currentSec = null;
+  let inHeader = true; // before first numbered section
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (isSectionDivider(line)) continue;
+
+    if (isSectionHeader(line)) {
+      inHeader = false;
+      if (currentSec) sections.push(currentSec);
+      const parsed = extractSectionNumber(line);
+      const cfg = matchSection(parsed.title);
+      currentSec = { num: parsed.num, title: parsed.title, cfg, lines: [] };
+      continue;
+    }
+
+    if (inHeader) {
+      if (!isEmptyLine(line)) headerLines.push(line);
+      continue;
+    }
+
+    if (currentSec) currentSec.lines.push(line);
+  }
+  if (currentSec) sections.push(currentSec);
+
+  // Find briefing title from header
+  let briefingTitle = '';
+  let briefingSubtitle = '';
+  for (const hl of headerLines) {
+    const spaced = hl.trim();
+    if (/[A-Z]\s[A-Z]\s[A-Z]/.test(spaced) || /MORGENLAGE|MITTAGSLAGE|ABENDLAGE/.test(spaced)) {
+      briefingTitle = spaced;
+    } else if (spaced.length > 0 && !briefingTitle) {
+      briefingSubtitle = spaced;
+    }
+  }
+  if (!briefingTitle && headerLines.length) briefingTitle = headerLines[0];
+
+  // ── BUILD HTML ──────────────────────────────────────────────────────────────
+  let html = '';
+
+  // Header card
+  html += `<div class="br-header">
+    <div class="br-classif">${esc(classif)}</div>
+    <div class="br-title-line">${esc(briefingTitle || 'LAGEBERICHT')}</div>
+    ${briefingSubtitle ? `<div class="br-subtitle">${esc(briefingSubtitle)}</div>` : ''}
+  </div>`;
+
+  // Toolbar
+  const hasAlert = sections.some(s => s.cfg.type === 'alert');
+  html += `<div class="br-toolbar">
+    <button class="br-tool-btn" onclick="brExpandAll()">▼ ALLE AUFKLAPPEN</button>
+    <button class="br-tool-btn" onclick="brCollapseAll()">▲ ALLE ZUKLAPPEN</button>
+    <button class="br-tool-btn" id="brRawBtn" onclick="brToggleRaw()">≡ ROHTEXT</button>
+  </div>`;
+
+  // Raw fallback (hidden by default)
+  html += `<div id="brRawWrap" style="display:none;background:var(--bg1);border:1px solid var(--bdr2);border-radius:var(--r);padding:14px;margin-bottom:10px">
+    <div style="font-size:7px;letter-spacing:2px;color:var(--txt4);margin-bottom:8px">ROHTEXT</div>
+    <pre class="br-raw">${esc(rawText)}</pre>
+  </div>`;
+
+  // Section cards
+  sections.forEach((sec, idx) => {
+    const open = true; // all open by default
+    const bodyId = `brs-${idx}`;
+    const chevId = `brc-${idx}`;
+    const itemHtml = renderSectionBody(sec);
+    const itemCount = (sec.lines.filter(l => !isEmptyLine(l) && !isSectionDivider(l))).length;
+
+    html += `<div class="br-section">
+      <div class="br-sec-header" onclick="brToggle('${bodyId}','${chevId}')">
+        <span class="br-sec-icon">${sec.cfg.icon}</span>
+        <span class="br-sec-title" style="color:${sec.cfg.color}">${sec.num}. ${esc(sec.title)}</span>
+        <span class="br-sec-count">${itemCount > 0 ? itemCount + ' Eintr.' : ''}</span>
+        <span class="br-sec-chevron open" id="${chevId}">▾</span>
+      </div>
+      <div class="br-sec-body open" id="${bodyId}">
+        ${itemHtml || '<div class="br-para" style="color:var(--txt4)">Keine Einträge</div>'}
+      </div>
+    </div>`;
+  });
+
+  // If no sections parsed, show raw
+  if (sections.length === 0) {
+    html = `<div class="br-header">
+      <div class="br-classif">${esc(classif)}</div>
+      <div class="br-title-line">LAGEBERICHT</div>
+    </div>
+    <div style="background:var(--bg1);border:1px solid var(--bdr2);border-radius:var(--r);padding:14px">
+      <pre class="br-raw">${esc(rawText)}</pre>
+    </div>`;
+  }
+
+  return html;
+}
+
+function renderSectionBody(sec) {
+  const { cfg, lines } = sec;
+  const nonEmpty = lines.filter(l => !isEmptyLine(l) && !isSectionDivider(l));
+  if (nonEmpty.length === 0) return '';
+
+  switch (cfg.type) {
+    case 'appt':    return renderApptLines(nonEmpty, cfg.apptClass || '');
+    case 'email':   return renderEmailLines(nonEmpty);
+    case 'news':    return renderNewsLines(nonEmpty);
+    case 'tasks':   return renderTaskLines(nonEmpty);
+    case 'alert':   return renderAlertLines(nonEmpty);
+    default:        return renderTextLines(nonEmpty);
+  }
+}
+
+function renderApptLines(lines, apptClass) {
+  // Group consecutive lines into appointment blocks
+  let html = '';
+  let pending = null;
+
+  const flush = () => {
+    if (!pending) return;
+    const { time, title, extras } = pending;
+    const borderColor = apptClass === 'personal' ? 'var(--grn2)'
+      : apptClass === 'defence' ? 'var(--red)'
+      : apptClass === 'verein' ? 'var(--ora)'
+      : apptClass === 'birthday' ? '#c084fc'
+      : 'var(--gold)';
+    html += `<div class="br-appt ${apptClass}" style="border-left-color:${borderColor}">
+      ${time ? `<div class="br-appt-time">${esc(time)}</div>` : ''}
+      <div class="br-appt-title">${esc(title)}</div>
+      ${extras.length ? `<div class="br-appt-meta">${extras.map(esc).join(' · ')}</div>` : ''}
+    </div>`;
+    pending = null;
+  };
+
+  for (const line of lines) {
+    const clean = cleanItemLine(line);
+    if (!clean) continue;
+
+    if (looksLikeAppointment(clean) || /^\d{1,2}\.\s/.test(clean)) {
+      flush();
+      const { time, title } = parseAppointment(clean);
+      pending = { time, title: title || clean, extras: [] };
+    } else if (pending) {
+      // continuation line
+      if (clean.length < 80) pending.extras.push(clean);
+    } else {
+      // standalone line, treat as appointment without time
+      flush();
+      pending = { time: '', title: clean, extras: [] };
+    }
+  }
+  flush();
+  return html || renderTextLines(lines);
+}
+
+function renderEmailLines(lines) {
+  let html = '';
+  // Look for grouped email entries; lines starting with [LIVE] or [MANUELL] get status treatment
+  let pending = null;
+
+  const flush = () => {
+    if (!pending) return;
+    const priColor = PRI_MAP[pending.priority] || PRI_MAP.NORMAL;
+    html += `<div class="br-email">
+      <div class="br-email-pri" style="color:${priColor};border:1px solid ${priColor}">${pending.priority}</div>
+      <div class="br-email-body">
+        ${pending.from ? `<div class="br-email-from">${esc(pending.from)}</div>` : ''}
+        <div class="br-email-subj">${esc(pending.subj)}</div>
+        ${pending.summary ? `<div class="br-email-summary">${esc(pending.summary)}</div>` : ''}
+      </div>
+    </div>`;
+    pending = null;
+  };
+
+  for (const line of lines) {
+    const clean = cleanItemLine(line);
+    if (!clean) continue;
+
+    // Status lines like [LIVE] cgbehrendt@gmail.com
+    if (isStatusLine(clean)) {
+      flush();
+      const isLive = clean.includes('[LIVE]');
+      const label = clean.replace(/\[LIVE\]|\[MANUELL\]/g, '').trim();
+      html += `<div class="br-item">
+        <span class="${isLive ? 'br-status-live' : 'br-status-manual'}">${isLive ? '● LIVE' : '● MANUELL'}</span>
+        <span class="br-item-text" style="font-size:11px;color:var(--txt3)">${esc(label)}</span>
+      </div>`;
+      continue;
+    }
+
+    // Von: / Betreff: / Absender: patterns
+    if (/^(von|from|absender)[:\s]/i.test(clean)) {
+      if (pending) pending.from = clean.replace(/^(von|from|absender)[:\s]*/i, '');
+      else { pending = { from: clean.replace(/^(von|from|absender)[:\s]*/i, ''), subj: '', summary: '', priority: 'NORMAL' }; }
+      continue;
+    }
+    if (/^(betreff|subject|re:|fwd:)[:\s]/i.test(clean)) {
+      const subj = clean.replace(/^(betreff|subject|re:|fwd:)[:\s]*/i, '');
+      if (pending) pending.subj = subj;
+      else { pending = { from: '', subj, summary: '', priority: detectEmailPriority(subj) }; }
+      continue;
+    }
+
+    // Line that looks like a new email entry (numbered or contains @)
+    if (/^\d+[\.\)]\s/.test(clean) || /@/.test(clean)) {
+      flush();
+      const pri = detectEmailPriority(clean);
+      // Try to split "Von: X — Betreff: Y" style
+      const fromMatch = clean.match(/von[:\s]+([^—\-]+)/i);
+      const subjMatch = clean.match(/(betreff|subject|re:)[:\s]+(.+)/i);
+      pending = {
+        from: fromMatch ? fromMatch[1].trim() : '',
+        subj: subjMatch ? subjMatch[2].trim() : clean,
+        summary: '',
+        priority: pri,
+      };
+      continue;
+    }
+
+    // Priority keyword standalone line
+    for (const [pri] of Object.entries(PRI_MAP)) {
+      if (clean.toUpperCase().startsWith(pri)) {
+        flush();
+        pending = { from: '', subj: clean.replace(new RegExp('^' + pri + '[:\\s]*', 'i'), ''), summary: '', priority: pri };
+        break;
+      }
+    }
+    if (!pending) {
+      // Continuation or generic line
+      flush();
+      pending = { from: '', subj: clean, summary: '', priority: detectEmailPriority(clean) };
+    }
+  }
+  flush();
+
+  return html || renderTextLines(lines);
+}
+
+function renderNewsLines(lines) {
+  let html = '';
+  let pending = null;
+
+  const flush = () => {
+    if (!pending) return;
+    html += `<div class="br-news">
+      ${pending.src ? `<div class="br-news-src">${esc(pending.src)}</div>` : ''}
+      <div class="br-news-text">${esc(pending.text)}</div>
+    </div>`;
+    pending = null;
+  };
+
+  for (const line of lines) {
+    const clean = cleanItemLine(line);
+    if (!clean) { flush(); continue; }
+
+    // Lines starting with known org names or numbered
+    if (/^\d+[\.\)]\s/.test(clean) || /^[A-ZÜÄÖ][A-ZÜÄÖ\s]{4,}:/.test(clean)) {
+      flush();
+      const colonIdx = clean.indexOf(':');
+      if (colonIdx > 0 && colonIdx < 30) {
+        pending = { src: clean.slice(0, colonIdx).trim(), text: clean.slice(colonIdx + 1).trim() };
+      } else {
+        pending = { src: '', text: clean };
+      }
+    } else if (pending) {
+      pending.text += ' ' + clean;
+    } else {
+      pending = { src: '', text: clean };
+    }
+  }
+  flush();
+
+  return html || renderTextLines(lines);
+}
+
+function renderTaskLines(lines) {
+  let html = '';
+  for (const line of lines) {
+    const clean = cleanItemLine(line);
+    if (!clean) continue;
+    // Detect priority label
+    let pri = 'NORMAL', text = clean;
+    for (const [p] of Object.entries(PRI_MAP)) {
+      if (clean.toUpperCase().includes(`[${p}]`) || clean.toUpperCase().startsWith(p)) {
+        pri = p;
+        text = clean.replace(new RegExp(`\\[?${p}\\]?`, 'i'), '').replace(/^[\s\-:]+/, '');
+        break;
+      }
+    }
+    const priColor = PRI_MAP[pri];
+    html += `<div class="br-task">
+      <span class="br-task-pri" style="color:${priColor};border:1px solid ${priColor}">${pri}</span>
+      <span class="br-task-txt">${esc(text)}</span>
+    </div>`;
+  }
+  return html;
+}
+
+function renderAlertLines(lines) {
+  let html = '';
+  const text = lines.filter(l => !isEmptyLine(l)).map(l => cleanItemLine(l)).join('\n');
+  if (text) {
+    html += `<div class="br-alert">
+      <div class="br-alert-label">⚠ KRITISCHE FRIST</div>
+      <div class="br-alert-text">${esc(text)}</div>
+    </div>`;
+  }
+  return html;
+}
+
+function renderTextLines(lines) {
+  let html = '';
+  let para = [];
+  const flush = () => {
+    if (para.length) { html += `<div class="br-para">${para.map(esc).join('<br>')}</div>`; para = []; }
+  };
+  for (const line of lines) {
+    const clean = cleanItemLine(line);
+    if (!clean) { flush(); continue; }
+    para.push(clean);
+  }
+  flush();
+  return html;
+}
+
+// ── TOGGLE HELPERS ────────────────────────────────────────────────────────────
+function brToggle(bodyId, chevId) {
+  const body = g(bodyId), chev = g(chevId);
+  const open = body.classList.toggle('open');
+  chev.classList.toggle('open', open);
+}
+function brExpandAll() {
+  document.querySelectorAll('.br-sec-body').forEach(b => b.classList.add('open'));
+  document.querySelectorAll('.br-sec-chevron').forEach(c => c.classList.add('open'));
+}
+function brCollapseAll() {
+  document.querySelectorAll('.br-sec-body').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.br-sec-chevron').forEach(c => c.classList.remove('open'));
+}
+let rawVisible = false;
+function brToggleRaw() {
+  rawVisible = !rawVisible;
+  g('brRawWrap').style.display = rawVisible ? 'block' : 'none';
+  g('brRawBtn').classList.toggle('active', rawVisible);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════════════════════
+const SYS=`Du bist ADJUTANT v4.0, militärischer Stabsassistent für Christian Behrendt (Major d.R.), 3tium GmbH Hannover. Sicherheitsfreigabe Ü2.
+Präzise, strukturiert, keine Füllsätze. 24h-Format.
+
+TERMINATEGORIEN: 1.PERSÖNLICH 2.GEBURTSTAGE 3.ALLGEMEIN 4.DEFENCE/MESSEN 5.VEREINSTERMINE
+
+GESCHÄFTSKONTEXTE:
+- 3tium GmbH: Defence-Consulting, BAAINBw/BAIUDBw
+- ADK Modulraum GmbH (Oriens Holding Prag): KRITIS-Modularbau, Bundeswehr
+- Frankenburg Technologies (Estland): Counter-UAS, CEO Kusti Salm, Mark I, €40M
+- KRITIS-Dachgesetz: März 2026 — MELDEFRIST JULI 2026 KRITISCH
+
+EMAIL: cgbehrendt@gmail.com [LIVE-MCP] | c.behrendt@3tium.de [MANUELL] | info@3tium.de [MANUELL] | johanniter-burgwedel@gmx.de [MANUELL] | LinkedIn/XING [MANUELL]`;
+
+const EMAILS=[
+  {label:'cgbehrendt@gmail.com',type:'LIVE',icon:'📧',note:'Gmail MCP aktiv'},
+  {label:'c.behrendt@3tium.de',type:'MANUELL',icon:'📧',note:'IMAP kein Zugang'},
+  {label:'info@3tium.de',type:'MANUELL',icon:'📧',note:'IMAP kein Zugang'},
+  {label:'johanniter-burgwedel@gmx.de',type:'MANUELL',icon:'📧',note:'GMX kein Zugang'},
+  {label:'LinkedIn',type:'MANUELL',icon:'💼',note:'Manuelle Prüfung'},
+  {label:'XING',type:'MANUELL',icon:'💼',note:'Manuelle Prüfung'},
+];
+const VEREINE=[
+  {id:'jbw',name:'Johanniter Subkommende Burgwedel',search:'Johanniter Subkommende Burgwedel Termine 2026',enabled:true},
+  {id:'jhan',name:'Johanniterorden Hannoversche Genossenschaft',search:'Johanniterorden Hannoversche Genossenschaft 2026',enabled:true},
+  {id:'jpom',name:'Johanniterorden Pommersche Genossenschaft',search:'Johanniterorden Pommersche Genossenschaft 2026',enabled:true},
+  {id:'bor',name:'Corps Borussia Hannover',search:'Corps Borussia Hannover aktuell 2026',enabled:true},
+  {id:'ypo',name:'YPO Young Presidents Organization',search:'YPO Hannover Deutschland events 2026',enabled:true},
+  {id:'pet',name:'St. Petri Kirche Hannover',search:'St. Petri Kirche Hannover Veranstaltungen 2026',enabled:true},
+  {id:'mum',name:'MuM',search:'MuM Hannover aktuell 2026',enabled:true},
+  {id:'uvn',name:'UVN Unternehmerverbände Niedersachsen',search:'UVN Unternehmerverbände Niedersachsen 2026',enabled:true},
+  {id:'zvei',name:'ZVEI',search:'ZVEI Pressemitteilung 2026',enabled:true},
+  {id:'bdsv',name:'BDSV',search:'BDSV aktuell 2026',enabled:true},
+  {id:'bdi',name:'BDI',search:'BDI Bundesverband Industrie 2026',enabled:true},
+];
+const DSRC=[
+  {name:'Frankenburg Technologies',search:'Frankenburg Technologies counter-UAS Mark I 2026'},
+  {name:'ADK Modulraum GmbH',search:'ADK Modulraum KRITIS Bundeswehr 2026'},
+  {name:'Sennheiser Defence',search:'Sennheiser defence military 2026'},
+  {name:'Defence-Messen EU',search:'Eurosatory DSEI ILA DVBE MSPO 2026'},
+  {name:'KRITIS-Dachgesetz',search:'KRITIS-Dachgesetz Meldepflicht Juli 2026'},
+  {name:'BAAINBw',search:'BAAINBw Ausschreibungen defence 2026'},
+];
+const EX=[
+  'ADK Modulraum Chancen bei Bundeswehr G-CAP Inland Ausschreibungen',
+  'Partnerschaftsstrategie Frankenburg Technologies — Vertrieb Deutschland',
+  'KRITIS-Dachgesetz Compliance: Schritte bis Juli 2026 für enercity AG',
+  'BAAINBw-Lieferantenqualifikation: Schritte und Zeitplan',
+];
+const PC={DRINGEND:'#ef4444',HOCH:'#f97316',NORMAL:'#d4a017',NIEDRIG:'#4a8040'};
+const CI={TELEFON:'📞',SCHREIBEN:'✍️',PRÄSENTATION:'📊',GESCHENK:'🎁',MEETING:'🤝',ALLGEMEIN:'📋'};
+const TL={
+  web_search:{icon:'🌐',label:'WEB-RECHERCHE'},list_events:{icon:'📅',label:'KALENDER ABRUFEN'},
+  get_events:{icon:'📅',label:'TERMINE LADEN'},search_threads:{icon:'📧',label:'GMAIL SUCHEN'},
+  get_thread:{icon:'📧',label:'EMAIL LESEN'},list_calendars:{icon:'📅',label:'KALENDER LISTEN'},
+};
+function getTL(n=''){const k=Object.keys(TL).find(k=>n.toLowerCase().includes(k));return k?TL[k]:{icon:'⚙',label:n.toUpperCase()||'TOOL'};}
+
+// ══ STATE ════════════════════════════════════════════════════════════════════
+let tasks=[],tf='OFFEN',running=false,steps=[],lastG={},vEnabled={};
+const TABS=['lage','tasks','quellen','projekte'];
+let cTab=0;
+
+// ── STORAGE KEYS ─────────────────────────────────────────────────────────────
+const SK = {
+  tasks:   'adj40-tasks',
+  vereine: 'adj40-vereine',
+  loop:    'adj40-loop',        // interrupted loop state
+  brief:   t => `adj40-brief-${t}`,
+};
+
+// ── LOOP PERSISTENCE ──────────────────────────────────────────────────────────
+async function saveLoopState(state) {
+  try { await window.storage.set(SK.loop, JSON.stringify(state)); } catch {}
+}
+async function clearLoopState() {
+  try { await window.storage.delete(SK.loop); } catch {
+    // fallback: overwrite with expired marker
+    try { await window.storage.set(SK.loop, JSON.stringify({expired:true})); } catch {}
+  }
+}
+async function loadLoopState() {
+  try {
+    const r = await window.storage.get(SK.loop);
+    if (!r) return null;
+    const s = JSON.parse(r.value);
+    if (s.expired) return null;
+    // Only resume if < 2 hours old and not complete
+    const age = (Date.now() - new Date(s.ts)) / 1000 / 60;
+    if (age > 120) { await clearLoopState(); return null; }
+    if (s.resumeFrom >= s.totalPhases) { await clearLoopState(); return null; }
+    return s;
+  } catch { return null; }
+}
+
+// ── RESUME / DISCARD ──────────────────────────────────────────────────────────
+let _pendingResume = null;
+
+async function checkResume() {
+  const state = await loadLoopState();
+  if (!state) { g('resumeBanner').style.display = 'none'; return; }
+  _pendingResume = state;
+  const typeLabels = {morgen:'MORGENLAGE',mittag:'MITTAGSLAGE',abend:'ABENDLAGE'};
+  const ts = new Date(state.ts).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  g('rbInfo').textContent =
+    `${typeLabels[state.type]||state.type.toUpperCase()} · Phase ${state.resumeFrom}/${state.totalPhases} abgeschlossen · ${ts} Uhr`;
+  // Phase dots
+  g('rbDots').innerHTML =
+    Array.from({length: state.totalPhases}, (_,i) =>
+      `<div class="rb-dot ${i < state.resumeFrom ? 'done' : 'pending'}" title="Phase ${i+1}"></div>`
+    ).join('') +
+    `<span class="rb-dot-lbl">${state.resumeFrom} von ${state.totalPhases} abgeschlossen</span>`;
+  g('resumeBanner').style.display = 'flex';
+}
+
+async function resumeLoop() {
+  if (!_pendingResume) return;
+  const { type, resumeFrom, history } = _pendingResume;
+  _pendingResume = null;
+  g('resumeBanner').style.display = 'none';
+  await startLoop(type, resumeFrom, history);
+}
+
+async function discardLoop() {
+  _pendingResume = null;
+  g('resumeBanner').style.display = 'none';
+  await clearLoopState();
+}
+
+// ══ PHASES ════════════════════════════════════════════════════════════════════
+function buildPhases(type){
+  const n=new Date();
+  const dDE=n.toLocaleDateString('de-DE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const tDE=n.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  const ot=tasks.filter(t=>!t.done).map(t=>`  - [${t.priority}][${t.category}] ${t.text}`).join('\n')||'  (keine)';
+  const ctx=`DATUM: ${dDE} | UHRZEIT: ${tDE}\nOFFENE AUFGABEN:\n${ot}`;
+  const ev=VEREINE.filter(v=>vEnabled[v.id]!==false);
+  const vS=ev.map((v,i)=>`${i+1}. ${v.name}: "${v.search}"`).join('\n');
+  const dS=DSRC.map((d,i)=>`${i+1}. "${d.search}"`).join('\n');
+  const MCP=[{type:'url',url:'https://calendarmcp.googleapis.com/mcp/v1',name:'google-calendar'},
+             {type:'url',url:'https://gmailmcp.googleapis.com/mcp/v1',name:'gmail'}];
+  const WEB=[{type:'web_search_20250305',name:'web_search'}];
+
+  if(type==='morgen') return [
+    {id:'kal',name:'KALENDER & GMAIL',icon:'📅',mcp:MCP,tools:[],
+      p:()=>`${ctx}\nPHASE 1:\n1. Alle Kalendertermine nächste 8 Tage — vollständig\n2. Letzte 30 Emails cgbehrendt@gmail.com — priorisiert\nHinweis: c.behrendt@3tium.de, info@3tium.de, johanniter-burgwedel@gmx.de — MANUELL.`},
+    {id:'ver',name:'VEREINS-RECHERCHE',icon:'🏛️',mcp:[],tools:WEB,
+      p:()=>`PHASE 2 — VEREINS-WEBSITES:\n${vS}`},
+    {id:'def',name:'DEFENCE-NEWS',icon:'🛡️',mcp:[],tools:WEB,
+      p:()=>`PHASE 3 — DEFENCE & BUSINESS:\n${dS}`},
+    {id:'syn',name:'LAGEBERICHT',icon:'📋',mcp:[],tools:[],
+      p:()=>`PHASE 4 — FINALE SYNTHESE. Integriere ALLE Daten aus Phasen 1-3:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nM O R G E N L A G E  //  ${dDE.toUpperCase()}  ${tDE}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n1. PERSÖNLICHE TERMINE (heute + 7 Tage)\n2. GEBURTSTAGE (nächste 24h)\n3. ALLGEMEINE TERMINE (3tium)\n4. DEFENCE-MESSEN EUROPA\n5. VEREINSTERMINE\n6. EMAIL-AUSWERTUNG\n   [LIVE] cgbehrendt@gmail.com\n   [MANUELL] c.behrendt@3tium.de\n   [MANUELL] info@3tium.de\n   [MANUELL] johanniter-burgwedel@gmx.de\n   [MANUELL] LinkedIn / XING\n7. VEREINS-NEUIGKEITEN\n8. DEFENCE-NEWS\n9. AUFGABENLISTE\n10. KRITISCHE FRISTEN — KRITIS-Dachgesetz Juli 2026`},
+  ];
+  if(type==='mittag') return [
+    {id:'kal',name:'KALENDER HEUTE',icon:'📅',mcp:MCP,tools:[],
+      p:()=>`${ctx}\nPHASE 1:\n1. Kalender heute — Vormittag/Nachmittag\n2. Neue Emails seit 07:00`},
+    {id:'news',name:'AKTUELLE NEWS',icon:'🌐',mcp:[],tools:WEB,
+      p:()=>'PHASE 2:\nDefence + Vereins-Benachrichtigungen letzte 6h'},
+    {id:'syn',name:'MITTAGSLAGE',icon:'📋',mcp:[],tools:[],
+      p:()=>`PHASE 3:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nM I T T A G S L A G E  //  ${dDE.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n1. ERLEDIGTE TERMINE\n2. AUSSTEHENDE TERMINE\n3. NEUE EMAILS (seit 0700)\n4. AKTUELLE MELDUNGEN\n5. PRIORITÄRE AUFGABEN`},
+  ];
+  return [
+    {id:'bil',name:'TAGES-BILANZ',icon:'📅',mcp:MCP,tools:[],
+      p:()=>`${ctx}\nPHASE 1:\n1. Kalender heute — Vollbilanz\n2. Emails des Tages`},
+    {id:'ver',name:'VEREINE CHECK',icon:'🏛️',mcp:[],tools:WEB,
+      p:()=>`PHASE 2:\n${ev.slice(0,5).map((v,i)=>`${i+1}. "${v.search} heute"`).join('\n')}`},
+    {id:'syn',name:'ABENDLAGE',icon:'📋',mcp:[],tools:[],
+      p:()=>`PHASE 3:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nA B E N D L A G E  //  ${dDE.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n1. TAGESAUSWERTUNG TERMINE\n2. OFFENE PUNKTE\n3. EMAIL-TAGESAUSWERTUNG\n4. VEREINS-BENACHRICHTIGUNGEN\n5. VORSCHAU MORGEN\n6. AUFGABEN MORGEN`},
+  ];
+}
+
+// ══ SSE ══════════════════════════════════════════════════════════════════════
+async function* sse(reader){
+  const dec=new TextDecoder();let buf='',ev=null;
+  while(true){const{done,value}=await reader.read();if(done)break;
+    buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
+    for(const ln of lines){
+      if(ln.startsWith('event: '))ev=ln.slice(7).trim();
+      else if(ln.startsWith('data: ')){const d=ln.slice(6).trim();if(d==='[DONE]')return;
+        try{yield{ev,data:JSON.parse(d)};}catch{}ev=null;}}}
+}
+
+// ══ STREAM CALL ═══════════════════════════════════════════════════════════════
+async function call({messages,mcp=[],tools=[],onTok,onStep}){
+  const body={model:'claude-sonnet-4-20250514',max_tokens:4000,stream:true,system:SYS,messages};
+  if(mcp.length)body.mcp_servers=mcp;if(tools.length)body.tools=tools;
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok){const t=await res.text();throw new Error(`API ${res.status}: ${t.slice(0,200)}`);}
+  let ft='',iTool=false,iText=false,ci=null;
+  for await(const{data} of sse(res.body.getReader())){
+    if(!data)continue;const t=data.type;
+    if(t==='content_block_start'){const cb=data.content_block;
+      if(cb?.type==='tool_use'){iTool=true;iText=false;ci=addStep(cb.name,'active');onStep?.(cb.name);}
+      else if(cb?.type==='text'){iText=true;iTool=false;if(ci!=null){updStep(ci,'done');ci=null;}}}
+    if(t==='content_block_delta'&&data.delta?.type==='text_delta'&&iText){ft+=data.delta.text;onTok?.(data.delta.text);}
+    if(t==='content_block_stop'){if(iTool&&ci!=null){updStep(ci,'done');ci=null;}iTool=false;iText=false;}
+    if(t==='message_delta'&&data.delta?.stop_reason==='end_turn'){if(ci!=null){updStep(ci,'done');ci=null;}}
+  }
+  return ft;
+}
+
+// ── NETWORK-AWARE CALL WITH 1 RETRY ──────────────────────────────────────────
+function isNetworkError(e) {
+  // API errors start with "API 4xx/5xx", everything else is network
+  return !e.message.startsWith('API ');
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function callWithRetry({messages, mcp, tools, onTok, onStep, onRetry}) {
+  try {
+    return await call({messages, mcp, tools, onTok, onStep});
+  } catch(e) {
+    if (isNetworkError(e)) {
+      onRetry?.();
+      await sleep(3000);
+      // Second attempt — clear any partial token state via fresh onTok closure
+      return await call({messages, mcp, tools, onTok, onStep});
+    }
+    throw e;
+  }
+}
+
+// ══ AGENT LOOP v3.3 — mit Phasen-Persistenz & Netzwerk-Retry ═════════════════
+async function startLoop(type, resumeFrom=0, resumeHist=[]) {
+  if(running) return;
+  running=true; steps=[]; rawVisible=false;
+  g('resumeBanner').style.display='none';
+  g('lageEmpty').style.display='none';
+  g('lageError').style.display='none';
+  g('bStreamWrap').style.display='none';
+  g('briefingRendered').style.display='none';
+  g('briefingRendered').innerHTML='';
+  g('stepsPanel').classList.remove('visible');
+  g('stepsList').innerHTML='';
+  g('phaseInterim').classList.remove('visible');
+  g('loadingBar').classList.add('visible');
+  g('loadingBar').classList.remove('retry-active');
+  ['morgen','mittag','abend'].forEach(t=>{
+    g(`btn-${t}`).disabled=true;
+    g(`btn-${t}`).classList.remove('running');
+  });
+  g(`btn-${type}`).classList.add('running');
+  let finalClassif='';
+
+  try {
+    const phases = buildPhases(type);
+    renderPB(phases, resumeFrom > 0 ? resumeFrom-1 : -1);
+    g('phaseBar').classList.add('visible');
+
+    // Resume from saved history or start fresh
+    const hist = [...resumeHist];
+
+    // If resuming, show completed phases as done in bar
+    if (resumeFrom > 0) {
+      renderPB(phases, resumeFrom);
+      g('loadingLabel').textContent = `FORTSETZEN AB PHASE ${resumeFrom+1}/${phases.length}`;
+      g('loadingSub').textContent = `${resumeFrom} PHASE(N) BEREITS ABGESCHLOSSEN`;
+      await sleep(800);
+    }
+
+    for (let i = resumeFrom; i < phases.length; i++) {
+      const ph = phases[i], fin = (i === phases.length - 1);
+      renderPB(phases, i);
+      g('loadingLabel').textContent = `PHASE ${i+1}/${phases.length}: ${ph.name}`;
+      g('loadingSub').textContent = ph.id;
+      g('loadingBar').classList.remove('retry-active');
+
+      hist.push({role:'user', content: ph.p()});
+
+      if (!fin) {
+        g('phaseInterim').classList.add('visible');
+        g('piLbl').textContent = `▶ PHASE ${i+1}: ${ph.name}`;
+        g('piTxt').textContent = '';
+      } else {
+        g('phaseInterim').classList.remove('visible');
+        g('loadingBar').classList.remove('visible');
+        g('bStreamWrap').style.display = 'block';
+        finalClassif = `INTERN // ${type.toUpperCase()}LAGE // ADJUTANT v3.3 // ${phases.length}P`;
+        g('bClassif').textContent = finalClassif;
+        g('bText').textContent = '';
+      }
+
+      let pt = '';
+      const at = await callWithRetry({
+        messages: hist,
+        mcp: ph.mcp,
+        tools: ph.tools,
+        onTok: (tok) => {
+          pt += tok;
+          if (fin) {
+            g('bText').textContent = pt;
+          } else {
+            g('piTxt').textContent = pt.slice(-300);
+          }
+        },
+        onStep: (name) => {
+          g('stepsPanel').classList.add('visible');
+          g('loadingLabel').textContent = `${getTL(name).icon} ${getTL(name).label}`;
+        },
+        onRetry: () => {
+          // Visual feedback during 3s wait
+          g('loadingBar').classList.add('retry-active');
+          g('loadingLabel').textContent = `⟳ NETZWERKFEHLER — NEUVERSUCH IN 3s`;
+          g('loadingSub').textContent = `PHASE ${i+1} WIRD WIEDERHOLT`;
+          g('loadingBar').classList.add('visible');
+          g('bStreamWrap').style.display = 'none';
+          pt = ''; // reset accumulated text for clean retry
+        },
+      });
+
+      hist.push({role:'assistant', content: at});
+      g('loadingBar').classList.remove('retry-active');
+
+      // ── SAVE PHASE STATE immediately after completion ───────────────────────
+      await saveLoopState({
+        type,
+        resumeFrom: i + 1,         // next phase index
+        totalPhases: phases.length,
+        history: hist,
+        phaseNames: phases.map(p => p.name),
+        ts: new Date().toISOString(),
+      });
+    }
+
+    // ── ALL PHASES DONE ────────────────────────────────────────────────────────
+    renderPB(phases, phases.length);
+    g('loadingBar').classList.remove('visible');
+    g('phaseInterim').classList.remove('visible');
+
+    // Render structured briefing
+    const rawText = g('bText').textContent;
+    g('bStreamWrap').style.display = 'none';
+    const rendered = renderBriefing(rawText, finalClassif);
+    g('briefingRendered').innerHTML = rendered;
+    g('briefingRendered').style.display = 'block';
+
+    lastG[type] = new Date();
+    g(`lg-${type}`).textContent = 'Zuletzt: ' + lastG[type].toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+
+    // Persist completed briefing & clear loop state
+    try { await window.storage.set(SK.brief(type), JSON.stringify({text:rawText, classif:finalClassif, ts:new Date().toISOString()})); } catch {}
+    await clearLoopState();
+
+  } catch(e) {
+    g('loadingBar').classList.remove('visible','retry-active');
+    g('bStreamWrap').style.display = 'none';
+    g('briefingRendered').style.display = 'none';
+    g('phaseBar').classList.remove('visible');
+    g('phaseInterim').classList.remove('visible');
+    g('lageError').style.display = 'block';
+
+    // Differentiate network vs API error message
+    const netErr = isNetworkError(e);
+    g('lageErrorMsg').textContent = netErr
+      ? `Netzwerkfehler nach Retry: ${e.message}\n\nFortschritt gespeichert — "FORTSETZEN" antippen.`
+      : e.message;
+
+    g('lageEmpty').style.display = 'block';
+
+    // Re-show resume banner if state was saved before the crash
+    await checkResume();
+
+  } finally {
+    running = false;
+    ['morgen','mittag','abend'].forEach(t => {
+      g(`btn-${t}`).disabled = false;
+      g(`btn-${t}`).classList.remove('running');
+    });
+  }
+}
+
+// ══ PHASE BAR ════════════════════════════════════════════════════════════════
+function renderPB(phases,ai){
+  g('phasesContainer').innerHTML=phases.map((p,i)=>{
+    const cls=i<ai?'done':i===ai?'active':'pending';
+    const s=i<ai?'✓':i===ai?'⟳':'·';
+    return `<div class="ph-item ${cls}"><div class="ph-icon">${p.icon}</div><div class="ph-name">${p.name}</div><div class="ph-stat">${s} ${i+1}/${phases.length}</div></div>`;
+  }).join('');
+}
+
+// ══ STEPS ════════════════════════════════════════════════════════════════════
+function addStep(name,status){const{icon,label}=getTL(name);const ts=new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});steps.push({label,icon,status,ts});rS();return steps.length-1;}
+function updStep(i,s){if(steps[i]){steps[i].status=s;rS();}}
+function rS(){g('stepsList').innerHTML=steps.slice(-6).map(s=>`<div class="step-item ${s.status}"><span class="si">${s.status==='active'?'⟳':s.status==='done'?'✓':'✗'}</span><span class="sn">${s.icon} ${s.label}</span><span class="st">${s.ts}</span></div>`).join('');}
+
+// ══ TASKS ════════════════════════════════════════════════════════════════════
+function setFilter(f){tf=f;['OFFEN','ERLEDIGT','ALLE'].forEach(x=>g(`f-${x}`).classList.toggle('active',x===f));rT();}
+function rT(){
+  const sh=tasks.filter(t=>tf==='ALLE'?true:tf==='OFFEN'?!t.done:t.done)
+    .sort((a,b)=>{if(a.done!==b.done)return a.done?1:-1;const o={DRINGEND:0,HOCH:1,NORMAL:2,NIEDRIG:3};return(o[a.priority]||2)-(o[b.priority]||2);});
+  g('taskList').innerHTML=sh.length===0?'<div class="empty" style="padding:20px"><div class="empty-l">KEINE AUFGABEN</div></div>'
+    :sh.map(t=>`<div class="t-row ${t.done?'done-r':''}"><input type="checkbox" class="t-chk" ${t.done?'checked':''} onchange="tToggle(${t.id})"><span style="font-size:14px">${CI[t.category]||'📋'}</span><span class="t-txt ${t.done?'done-t':''}">${esc(t.text)}</span><span class="t-badge" style="color:${PC[t.priority]};border:1px solid ${PC[t.priority]}">${t.priority}</span><button class="t-del" onclick="tDel(${t.id})">×</button></div>`).join('');
+  const op=tasks.filter(t=>!t.done).length,ur=tasks.filter(t=>!t.done&&t.priority==='DRINGEND').length;
+  ['sGes','sOff','sErl','sDri'].forEach((id,i)=>g(id).textContent=[tasks.length,op,tasks.filter(t=>t.done).length,ur][i]);
+  try{g('sbOff').textContent=op;g('sbDri').textContent=ur;}catch{}
+  const lbl=`AUFGABEN${op>0?` (${op})`:''}`;
+  try{g('sbTasksLbl').textContent=lbl;}catch{}
+  try{g('bnTasksLbl').textContent=lbl;const b=g('bnTasksBadge');b.style.display=op>0?'block':'none';b.textContent=op;}catch{}
+  try{const b=g('sbTasksBadge');b.style.display=op>0?'block':'none';b.textContent=op;}catch{}
+  [g('thUrgent'),g('sbUrgent')].forEach(e=>{if(e){e.style.display=ur>0?'block':'none';if(ur>0)e.textContent=`⚡ ${ur} DRINGEND`;}});
+}
+function addTask(){const tx=g('taskInput').value.trim();if(!tx)return;
+  tasks.unshift({id:Date.now(),text:tx,priority:g('taskPri').value,category:g('taskCat').value,created:new Date().toISOString(),done:false});
+  g('taskInput').value='';sT();rT();}
+function tToggle(id){const t=tasks.find(x=>x.id===id);if(t){t.done=!t.done;sT();rT();}}
+function tDel(id){tasks=tasks.filter(t=>t.id!==id);sT();rT();}
+async function sT(){try{await window.storage.set(SK.tasks,JSON.stringify(tasks));}catch{}}
+
+// ══ SOURCES ══════════════════════════════════════════════════════════════════
+function rSrc(){
+  g('emailList').innerHTML=EMAILS.map(a=>`<div class="src-row"><span class="src-icon">${a.icon}</span><div style="flex:1"><div class="src-name">${a.label}</div><span class="src-sub">${a.note}</span></div><span class="src-badge ${a.type==='LIVE'?'badge-live':'badge-manual'}">${a.type}</span></div>`).join('');
+  g('vereineList').innerHTML=VEREINE.map(v=>`<div class="src-row"><input type="checkbox" class="src-toggle" ${vEnabled[v.id]!==false?'checked':''} onchange="tgV('${v.id}',this.checked)"><div style="flex:1"><div class="src-name" style="font-size:9.5px">${v.name}</div></div><span class="src-badge badge-web">WEB</span></div>`).join('');
+  g('defenceList').innerHTML=DSRC.map(d=>`<div class="src-row"><span class="src-icon">🛡️</span><div style="flex:1"><div class="src-name" style="font-size:9.5px">${d.name}</div></div><span class="src-badge badge-web">WEB</span></div>`).join('');
+}
+function tgV(id,ch){vEnabled[id]=ch;try{window.storage.set(SK.vereine,JSON.stringify(vEnabled));}catch{}}
+
+// ══ PROJECTS ═════════════════════════════════════════════════════════════════
+const PS=`Du bist ADJUTANT v3.2. KONTEXT: 3tium, ADK Modulraum, Frankenburg, KRITIS Juli 2026.
+Antworte NUR mit JSON (kein Markdown):
+{"titel":"...","analyse":"...","naechste_schritte":["..."],"aufgaben":[{"text":"...","prioritaet":"DRINGEND|HOCH|NORMAL|NIEDRIG","kategorie":"TELEFON|SCHREIBEN|PRÄSENTATION|MEETING|ALLGEMEIN"}],"email_empfehlungen":["..."]}`;
+function setEx(i){g('projPrompt').value=EX[i];}
+async function analyzeProject(){
+  const p=g('projPrompt').value.trim();if(!p)return;
+  g('btnAnalyze').disabled=true;g('btnAnalyze').textContent='LÄUFT...';
+  g('projLoading').classList.add('visible');g('projError').style.display='none';g('projResult').innerHTML='';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2500,system:PS,
+        messages:[{role:'user',content:p}],tools:[{type:'web_search_20250305',name:'web_search'}]})});
+    const data=await res.json();
+    const tx=data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    const r=JSON.parse(tx.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim());
+    if(r.aufgaben?.length){const nT=r.aufgaben.map(a=>({id:Date.now()+Math.random(),done:false,created:new Date().toISOString(),text:`[${r.titel}] ${a.text}`,priority:a.prioritaet||'NORMAL',category:a.kategorie||'ALLGEMEIN'}));tasks=[...nT,...tasks];sT();rT();}
+    g('projResult').innerHTML=`<div class="card gl" style="margin-bottom:8px"><div style="font-size:7.5px;letter-spacing:3px;color:var(--txt4);margin-bottom:5px">PROJEKTANALYSE</div><div style="font-size:14px;color:var(--gold);margin-bottom:12px">${esc(r.titel||'')}</div><pre style="font-size:11px;line-height:1.8;color:var(--txt);white-space:pre-wrap;font-family:var(--fn)">${esc(r.analyse||'')}</pre></div>${r.naechste_schritte?.length?`<div class="card" style="margin-bottom:8px"><div class="sh">Nächste Schritte</div>${r.naechste_schritte.map((s,i)=>`<div style="display:flex;gap:8px;font-size:11px;color:var(--txt);margin-bottom:8px;min-height:36px;align-items:flex-start"><span style="color:var(--gold);min-width:18px;font-weight:bold">${i+1}.</span><span>${esc(s)}</span></div>`).join('')}</div>`:''} ${r.aufgaben?.length?`<div class="card" style="margin-bottom:8px"><div class="sh">Aufgaben (${r.aufgaben.length}) <span style="color:var(--grn)">✓ eingetragen</span></div>${r.aufgaben.map(a=>`<div style="display:flex;gap:7px;align-items:center;font-size:10.5px;color:var(--txt2);margin-bottom:7px;min-height:36px"><span style="color:${PC[a.prioritaet]||'#d4a017'};border:1px solid ${PC[a.prioritaet]||'#d4a017'};font-size:7.5px;padding:2px 5px;border-radius:2px;flex-shrink:0">${a.prioritaet}</span><span>${CI[a.kategorie]||'📋'}</span><span>${esc(a.text)}</span></div>`).join('')}</div>`:''} ${r.email_empfehlungen?.length?`<div class="card"><div class="sh">Email-Empfehlungen</div>${r.email_empfehlungen.map(e=>`<div style="display:flex;gap:7px;font-size:10.5px;color:var(--txt2);margin-bottom:8px"><span style="color:var(--gold)">✉</span><span>${esc(e)}</span></div>`).join('')}</div>`:''}`;
+    g('projResult').style.display='block';
+  }catch(e){g('projError').style.display='block';g('projErrorMsg').textContent='⚠ '+e.message;}
+  finally{g('projLoading').classList.remove('visible');g('btnAnalyze').disabled=false;g('btnAnalyze').textContent='ANALYSE STARTEN';}
+}
+
+// ══ TAB & SWIPE ═══════════════════════════════════════════════════════════════
+function switchTab(id,btn,pfx=''){
+  cTab=TABS.indexOf(id);
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  g(`tab-${id}`).classList.add('active');
+  ['bn-','sbn-'].forEach(p=>{
+    document.querySelectorAll(`[id^="${p}"]`).forEach(b=>b.classList.remove('active'));
+    const t=g(`${p}${id}`);if(t)t.classList.add('active');
+  });
+}
+let tx0=0,ty0=0;
+document.addEventListener('touchstart',e=>{tx0=e.touches[0].clientX;ty0=e.touches[0].clientY;},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(['TEXTAREA','INPUT','SELECT'].includes(e.target.tagName))return;
+  const dx=e.changedTouches[0].clientX-tx0,dy=e.changedTouches[0].clientY-ty0;
+  if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>60){
+    if(dx<0&&cTab<TABS.length-1)switchTab(TABS[cTab+1]);
+    else if(dx>0&&cTab>0)switchTab(TABS[cTab-1]);
+  }
+},{passive:true});
+
+// ══ CLOCK ════════════════════════════════════════════════════════════════════
+function tick(){
+  const n=new Date();
+  const t=n.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const d=n.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+  try{g('thClock').textContent=t;g('thDate').textContent=d;}catch{}
+  try{g('sbClock').textContent=t;g('sbDate').textContent=d;}catch{}
+}
+setInterval(tick,1000);tick();
+
+// ══ UTILS ════════════════════════════════════════════════════════════════════
+function g(id){return document.getElementById(id);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ══ SERVICE WORKER ════════════════════════════════════════════════════════════
+let _installPrompt = null;
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js', { scope: './' })
+    .then(reg => console.log('[SW] Registriert:', reg.scope))
+    .catch(err => console.error('[SW] Fehler:', err));
+}
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _installPrompt = e;
+  try { g('installBtn').style.display = 'flex'; } catch {}
+  try { g('bnInstallBtn').style.display = 'flex'; } catch {}
+});
+
+function installPWA() {
+  if (!_installPrompt) {
+    alert('Zum Installieren:\nChrome-Menü (⋮) → "App installieren"\noder "Zum Startbildschirm hinzufügen"');
+    return;
+  }
+  _installPrompt.prompt();
+  _installPrompt.userChoice.then(r => {
+    if (r.outcome === 'accepted') {
+      try { g('installBtn').style.display = 'none'; } catch {}
+      try { g('bnInstallBtn').style.display = 'none'; } catch {}
+    }
+    _installPrompt = null;
+  });
+}
+
+window.addEventListener('appinstalled', () => {
+  try { g('installBtn').style.display = 'none'; } catch {}
+  try { g('bnInstallBtn').style.display = 'none'; } catch {}
+});
+
+// ══ KALENDER-ERINNERUNGEN ═════════════════════════════════════════════════════
+function copyReminder(btn, text, successId) {
+  navigator.clipboard.writeText(text).then(() => {
+    const el = g(successId);
+    if (el) { el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2000); }
+  }).catch(() => {
+    // Fallback für ältere Browser
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    const el = g(successId);
+    if (el) { el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2000); }
+  });
+}
+
+// ══ INIT ═════════════════════════════════════════════════════════════════════
+(async()=>{
+  // Load tasks & vereine config
+  try{const r=await window.storage.get(SK.tasks);if(r)tasks=JSON.parse(r.value);}catch{}
+  try{const r=await window.storage.get(SK.vereine);if(r)vEnabled=JSON.parse(r.value);}catch{}
+
+  // Restore last completed briefing (< 4h, most recent type)
+  for(const t of['morgen','mittag','abend']){
+    try{
+      const r=await window.storage.get(SK.brief(t));
+      if(r){
+        const{text,classif,ts}=JSON.parse(r.value);
+        const age=(Date.now()-new Date(ts))/1000/60;
+        g(`lg-${t}`).textContent='Zuletzt: '+new Date(ts).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+        // Show most recent briefing if < 4h old and no briefing shown yet
+        if(age<240 && g('briefingRendered').innerHTML===''){
+          const rendered=renderBriefing(text,classif||`INTERN // ${t.toUpperCase()}LAGE // ADJUTANT v3.3`);
+          g('briefingRendered').innerHTML=rendered;
+          g('briefingRendered').style.display='block';
+          g('lageEmpty').style.display='none';
+        }
+      }
+    }catch{}
+  }
+
+  rT();
+  rSrc();
+
+  // Check for interrupted loop — shows resume banner if found
+  await checkResume();
+})();
+</script>
+</body></html>
